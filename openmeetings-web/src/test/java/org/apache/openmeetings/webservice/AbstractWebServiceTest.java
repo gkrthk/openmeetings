@@ -20,10 +20,13 @@ package org.apache.openmeetings.webservice;
 
 import static java.util.UUID.randomUUID;
 import static javax.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED;
+import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.apache.openmeetings.AbstractJUnitDefaults.createPass;
 import static org.apache.openmeetings.AbstractJUnitDefaults.ensureSchema;
 import static org.apache.openmeetings.AbstractJUnitDefaults.soapUsername;
 import static org.apache.openmeetings.AbstractJUnitDefaults.userpass;
+import static org.apache.openmeetings.AbstractSpringTest.setOmHome;
+import static org.apache.openmeetings.cli.Admin.RED5_HOME;
 import static org.apache.openmeetings.db.util.ApplicationHelper.ensureApplication;
 import static org.apache.openmeetings.util.OmFileHelper.getOmHome;
 import static org.junit.Assert.assertEquals;
@@ -35,6 +38,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -48,7 +52,6 @@ import org.apache.catalina.startup.Tomcat;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
-import org.apache.openmeetings.AbstractSpringTest;
 import org.apache.openmeetings.db.dao.user.UserDao;
 import org.apache.openmeetings.db.dto.basic.ServiceResult;
 import org.apache.openmeetings.db.dto.basic.ServiceResult.Type;
@@ -59,12 +62,14 @@ import org.apache.openmeetings.db.entity.file.BaseFileItem;
 import org.apache.openmeetings.db.entity.user.User;
 import org.apache.openmeetings.installation.ImportInitvalues;
 import org.apache.openmeetings.webservice.util.AppointmentMessageBodyReader;
+import org.apache.tomcat.util.scan.Constants;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 
 public class AbstractWebServiceTest {
+	private static Path TEMP_TOMCAT_BASE;
 	private static Tomcat tomcat;
 	private static final String HOST = "localhost";
 	private static final String CONTEXT = "/openmeetings";
@@ -106,14 +111,18 @@ public class AbstractWebServiceTest {
 
 	@BeforeClass
 	public static void initialize() throws Exception {
-		AbstractSpringTest.init();
+		setOmHome();
+		System.setProperty(Constants.SKIP_JARS_PROPERTY, "*");
+		TEMP_TOMCAT_BASE = Files.createTempDirectory("om" + randomUUID().toString());
+		File wd = TEMP_TOMCAT_BASE.toFile();
+		System.setProperty("user.dir", wd.getCanonicalPath());
+		System.setProperty(RED5_HOME, getOmHome().getCanonicalPath());
 		tomcat = new Tomcat();
 		Connector connector = new Connector("HTTP/1.1");
 		connector.setAttribute("address", InetAddress.getByName(HOST).getHostAddress());
 		connector.setPort(0);
 		tomcat.getService().addConnector(connector);
 		tomcat.setConnector(connector);
-		File wd = Files.createTempDirectory("om" + randomUUID().toString()).toFile();
 		tomcat.setBaseDir(wd.getCanonicalPath());
 		tomcat.getHost().setAppBase(wd.getCanonicalPath());
 		tomcat.getHost().setAutoDeploy(false);
@@ -137,6 +146,8 @@ public class AbstractWebServiceTest {
 			}
 			tomcat.destroy();
 		}
+		System.getProperties().remove(RED5_HOME);
+		deleteQuietly(TEMP_TOMCAT_BASE.toFile());
 	}
 
 	protected static CallResult<RoomDTO> createAndValidate(RoomDTO r) {

@@ -18,7 +18,7 @@
  */
 package org.apache.openmeetings.cli;
 
-import static org.apache.commons.io.FileUtils.deleteDirectory;
+import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.apache.openmeetings.AbstractJUnitDefaults.adminUsername;
 import static org.apache.openmeetings.AbstractJUnitDefaults.email;
 import static org.apache.openmeetings.AbstractJUnitDefaults.group;
@@ -63,7 +63,7 @@ public class TestAdmin {
 	public void tearDown() throws IOException {
 		resetDerbyHome();
 		System.getProperties().remove(RED5_HOME);
-		deleteDirectory(tempFolder);
+		deleteQuietly(tempFolder);
 		WebApplication app = (WebApplication)Application.get(getWicketApplicationName());
 		if (app != null) {
 			destroyApplication();

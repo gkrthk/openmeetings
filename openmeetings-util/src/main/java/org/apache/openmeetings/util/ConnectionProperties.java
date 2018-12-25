@@ -19,24 +19,30 @@
 package org.apache.openmeetings.util;
 
 import java.io.Serializable;
+import java.util.Locale;
 
 public class ConnectionProperties implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	public enum DbType {
-		db2
-		, derby
-		, mssql
-		, mysql
-		, oracle
-		, postgresql
+		DB2
+		, DERBY
+		, MSSQL
+		, MYSQL
+		, ORACLE
+		, POSTGRESQL
+		, H2; // for testing purposes
+
+		public final String getLabel() {
+			return name().toLowerCase(Locale.ROOT);
+		}
 	}
 
 	private String driver = "org.apache.derby.jdbc.EmbeddedDriver";
 	private String url = "jdbc:derby:openmeetings";
 	private String login = "user";
 	private String password = "secret";
-	private DbType dbType = DbType.derby;
+	private DbType dbType = DbType.DERBY;
 
 	public String getDriver() {
 		return driver;

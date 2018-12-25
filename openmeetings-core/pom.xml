@@ -98,7 +98,6 @@
 		<dependency>
 			<groupId>org.kurento</groupId>
 			<artifactId>kurento-client</artifactId>
-			<version>6.8.0</version>
 		</dependency>
 		<!-- Test dependencies -->
 		<dependency>

@@ -34,9 +34,11 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.openmeetings.cli.ConnectionPropertiesPatcher;
 import org.apache.openmeetings.core.converter.DocumentConverter;
@@ -195,6 +197,30 @@ public class InstallWizard extends AbstractWizard<InstallationConfig> {
 		}
 	}
 
+	private final static class DbTypeDropDown extends DropDownChoice<DbType> {
+		private static final long serialVersionUID = 1L;
+
+		public DbTypeDropDown(String id) {
+			super(id);
+			Set<DbType> types = new LinkedHashSet<>(Arrays.asList(DbType.values()));
+			types.remove(DbType.H2);
+			setChoices(new ArrayList<>(types));
+			setChoiceRenderer(new ChoiceRenderer<DbType>() {
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				public Object getDisplayValue(DbType object) {
+					return getString(String.format("install.wizard.db.step.%s.name", object.getLabel()));
+				}
+
+				@Override
+				public String getIdValue(DbType object, int index) {
+					return object.name();
+				}
+			});
+		}
+	}
+
 	private final class DbStep extends BaseStep {
 		private static final long serialVersionUID = 1L;
 		private final RequiredTextField<String> host = new RequiredTextField<>("host", Model.of(""));
@@ -204,19 +230,7 @@ public class InstallWizard extends AbstractWizard<InstallationConfig> {
 		private final TextField<String> pass = new TextField<>("password");
 		private final Form<ConnectionProperties> form = new Form<ConnectionProperties>("form", new CompoundPropertyModel<>(getProps(null))) {
 			private static final long serialVersionUID = 1L;
-			private final DropDownChoice<DbType> db = new DropDownChoice<>("dbType", Arrays.asList(DbType.values()), new ChoiceRenderer<DbType>() {
-				private static final long serialVersionUID = 1L;
-
-				@Override
-				public Object getDisplayValue(DbType object) {
-					return getString(String.format("install.wizard.db.step.%s.name", object.name()));
-				}
-
-				@Override
-				public String getIdValue(DbType object, int index) {
-					return object.name();
-				}
-			});
+			private final DbTypeDropDown db = new DbTypeDropDown("dbType");
 
 			@Override
 			protected void onInitialize() {
@@ -247,7 +261,7 @@ public class InstallWizard extends AbstractWizard<InstallationConfig> {
 			}
 
 			private String getDbName(ConnectionProperties props) {
-				return getString("install.wizard.db.step.instructions." + props.getDbType().name());
+				return getString("install.wizard.db.step.instructions." + props.getDbType().getLabel());
 			}
 
 			@Override
@@ -266,13 +280,13 @@ public class InstallWizard extends AbstractWizard<InstallationConfig> {
 					valid = conn.isValid(0); //no timeout
 					String sql = null;
 					switch (props.getDbType()) {
-						case db2:
+						case DB2:
 							sql = "select count(*) from systables";
 							break;
-						case oracle:
+						case ORACLE:
 							sql = "SELECT 1 FROM DUAL";
 							break;
-						case derby:
+						case DERBY:
 							sql = "SELECT 1 FROM SYSIBM.SYSDUMMY1";
 							break;
 						default:
@@ -330,7 +344,7 @@ public class InstallWizard extends AbstractWizard<InstallationConfig> {
 					return props; // initial select
 				}
 				props = ConnectionPropertiesPatcher.getConnectionProperties(conf);
-				if (DbType.derby != props.getDbType()) {
+				if (DbType.DERBY != props.getDbType()) {
 					// resetting default login/password
 					props.setLogin(null);
 					props.setPassword(null);
@@ -344,13 +358,13 @@ public class InstallWizard extends AbstractWizard<InstallationConfig> {
 		private void initForm(boolean getProps, AjaxRequestTarget target) {
 			ConnectionProperties props = getProps ? getProps(form.getModelObject().getDbType()) : form.getModelObject();
 			form.setModelObject(props);
-			host.setVisible(props.getDbType() != DbType.derby);
-			port.setVisible(props.getDbType() != DbType.derby);
-			user.setVisible(props.getDbType() != DbType.derby);
-			pass.setVisible(props.getDbType() != DbType.derby);
+			host.setVisible(props.getDbType() != DbType.DERBY);
+			port.setVisible(props.getDbType() != DbType.DERBY);
+			user.setVisible(props.getDbType() != DbType.DERBY);
+			pass.setVisible(props.getDbType() != DbType.DERBY);
 			try {
 				switch (props.getDbType()) {
-					case mssql: {
+					case MSSQL: {
 						String url = props.getURL().substring("jdbc:sqlserver://".length());
 						String[] parts = url.split(";");
 						String[] hp = parts[0].split(":");
@@ -359,14 +373,14 @@ public class InstallWizard extends AbstractWizard<InstallationConfig> {
 						dbname.setModelObject(parts[1].substring(parts[1].indexOf('=') + 1));
 						}
 						break;
-					case oracle: {
+					case ORACLE: {
 						String[] parts = props.getURL().split(":");
 						host.setModelObject(parts[3].substring(1));
 						port.setModelObject(Integer.parseInt(parts[4]));
 						dbname.setModelObject(parts[5]);
 						}
 						break;
-					case derby: {
+					case DERBY: {
 						host.setModelObject("");
 						port.setModelObject(0);
 						String[] parts = props.getURL().split(";");

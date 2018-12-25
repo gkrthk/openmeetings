@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.Properties;
 
 import org.apache.openmeetings.util.ConnectionProperties.DbType;
+import org.apache.wicket.util.string.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -255,11 +256,12 @@ public class OmFileHelper {
 	}
 
 	public static File getPersistence(String dbType) {
-		return getPersistence(DbType.valueOf(dbType));
+		return getPersistence(Strings.isEmpty(dbType) ? null
+				: DbType.valueOf(dbType.toUpperCase(Locale.ROOT)));
 	}
 
 	public static File getPersistence(DbType dbType) {
-		return new File(OmFileHelper.getWebinfDir(), dbType == null ? PERSISTENCE_NAME : String.format(DB_PERSISTENCE_NAME, dbType));
+		return new File(OmFileHelper.getWebinfDir(), dbType == null ? PERSISTENCE_NAME : String.format(DB_PERSISTENCE_NAME, dbType.getLabel()));
 	}
 
 	public static File getLdapConf(String name) {

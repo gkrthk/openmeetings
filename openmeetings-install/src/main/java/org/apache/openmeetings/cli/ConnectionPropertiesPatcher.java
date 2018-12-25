@@ -19,6 +19,7 @@
 package org.apache.openmeetings.cli;
 
 import java.io.File;
+import java.util.Locale;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -50,22 +51,25 @@ public abstract class ConnectionPropertiesPatcher {
 	public static ConnectionPropertiesPatcher getPatcher(ConnectionProperties props) {
 		ConnectionPropertiesPatcher patcher;
 		switch (props.getDbType()) {
-			case db2:
+			case DB2:
 				patcher = new Db2Patcher();
 				break;
-			case mssql:
+			case MSSQL:
 				patcher = new MssqlPatcher();
 				break;
-			case mysql:
+			case MYSQL:
 				patcher = new MysqlPatcher();
 				break;
-			case oracle:
+			case ORACLE:
 				patcher = new OraclePatcher();
 				break;
-			case postgresql:
+			case POSTGRESQL:
 				patcher = new PostgresPatcher();
 				break;
-			case derby:
+			case H2:
+				patcher = new H2Patcher();
+				break;
+			case DERBY:
 			default:
 				patcher = new DerbyPatcher();
 				break;
@@ -165,7 +169,8 @@ public abstract class ConnectionPropertiesPatcher {
 				try {
 					//will try to "guess" dbType
 					String[] parts = prop.split(":");
-					connectionProperties.setDbType("sqlserver".equals(parts[1]) ? DbType.mssql : DbType.valueOf(parts[1]));
+					final String name = parts[1].toUpperCase(Locale.ROOT);
+					connectionProperties.setDbType("SQLSERVER".equals(name) ? DbType.MSSQL : DbType.valueOf(name));
 				} catch (Exception e) {
 					//ignore
 				}

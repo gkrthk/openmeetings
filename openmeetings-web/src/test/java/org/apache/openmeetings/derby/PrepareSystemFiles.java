@@ -50,7 +50,7 @@ public class PrepareSystemFiles {
 				conf.delete();
 			}
 
-			ConnectionPropertiesPatcher.patch(DbType.derby.name()
+			ConnectionPropertiesPatcher.patch(DbType.DERBY.name()
 					, "localhost"
 					, "1527"
 					, databaseHomeDirectory + "openmeetings"
